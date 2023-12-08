@@ -1,16 +1,18 @@
 class LeadTracker {
     constructor() {
-        this.leads = [];
+        this.leads = JSON.parse(localStorage.getItem('leads')) || [];
 
         this.$leads = null;
 
         this.initDOMElements();
         this.addEventListeners();
+        this.updateLeadsUI();
     }
 
     initDOMElements() {
         this.$leadInput = this.getElement('#lead-input');
         this.$saveInputBtn = this.getElement('#save-input-btn');
+        this.$deleteBtn = this.getElement('#delete-btn');
     }
 
     getElement(selector) {
@@ -19,12 +21,13 @@ class LeadTracker {
         if (!$element) {
             console.error(`Element with selector "${selector}" not found.`);
         }
-        
+
         return $element;
     }
 
     addEventListeners() {
         this.$saveInputBtn?.addEventListener('click', () => this.saveLead());
+        this.$deleteBtn?.addEventListener('click', () => this.deleteAll());
     }
 
     saveLead() {
@@ -33,29 +36,49 @@ class LeadTracker {
         if (inputValue) {
             this.leads.push(inputValue);
 
+            localStorage.setItem('leads', JSON.stringify(this.leads));
+
             this.$leadInput.value = '';
-            
+
             this.updateLeadsUI();
         }
     }
 
+    deleteAll() {
+        localStorage.clear();
+
+        this.leads = [];
+
+        this.updateLeadsUI();
+    }
+
     updateLeadsUI() {
-        if (this.leads.length === 1) {
-            const ul = document.createElement('ul');
-            ul.id = 'leads';
+        if (this.leads.length >= 1) {
+            if (!this.$leads) {
+                const ul = document.createElement('ul');
+                ul.id = 'leads';
 
-            this.$saveInputBtn.after(ul);
+                this.$deleteBtn.after(ul);
 
-            this.$leads = document.querySelector('#leads');
+                this.$leads = document.querySelector('#leads');
+            }
+
+            const listItems = this.leads
+                .map(
+                    lead => `
+                        <li>
+                            <a href="${lead}" target="_blank">${lead}</a>
+                        </li>
+                    `
+                )
+                .join('');
+
+            this.$leads.innerHTML = listItems;
+        } else {
+            if (this.$leads) {
+                this.$leads.remove();
+            }
         }
-
-        const listItems = this.leads.map(lead => `
-            <li>
-                <a href="${lead}" target="_blank">${lead}</a>
-            </li>
-        `).join('');
-
-        this.$leads.innerHTML = listItems;
     }
 }
 
