@@ -4,7 +4,7 @@ class LeadTracker {
 
         this.initDOMElements();
         this.addEventListeners();
-        this.updateLeadsUI(this.leads);
+        this.renderLeadsList(this.leads);
     }
 
     initDOMElements() {
@@ -13,6 +13,7 @@ class LeadTracker {
         this.$saveTabBtn = this.getElement('#save-tab-btn');
         this.$deleteBtn = this.getElement('#delete-btn');
         this.$leadsItemsOutlet = this.getElement('#leads-items-outlet');
+        this.$leadsList = this.createLeadsList();
     }
 
     getElement(selector) {
@@ -37,7 +38,7 @@ class LeadTracker {
         if (value) {
             this.saveLead(value);
 
-            this.$leadInput.value;
+            this.$leadInput.value = '';
         }
     }
 
@@ -51,7 +52,7 @@ class LeadTracker {
 
             localStorage.setItem('leads', JSON.stringify(this.leads));
 
-            this.updateLeadsUI(this.leads);
+            this.renderLeadsList(this.leads);
         }
     }
 
@@ -60,40 +61,32 @@ class LeadTracker {
 
         this.leads = [];
 
-        this.updateLeadsUI(this.leads);
+        this.$leadsList.innerHTML = '';
     }
 
     getCurrentTabUrl(callback) {
         return chrome.tabs?.query({ active: true, currentWindow: true }, tabs => callback(tabs[0].url));
     }
 
-    updateLeadsUI(leads) {
-        const leadsItemsOutletHasChildren = this.$leadsItemsOutlet.children.length;
+    createLeadsList() {
+        const ul = document.createElement('ul');
+        ul.id = 'leads';
 
-        if (leads.length >= 1) {
-            if (!leadsItemsOutletHasChildren) {
-                const ul = document.createElement('ul');
-                ul.id = 'leads';
+        this.$leadsItemsOutlet.appendChild(ul);
 
-                this.$leadsItemsOutlet.append(ul);
-            }
+        return ul;
+    }
 
-            const listItems = leads
-                .map(
-                    lead => `
-                        <li>
-                            <a href="${lead}" target="_blank">${lead}</a>
-                        </li>
-                    `
-                )
-                .join('');
+    addLeadToUI(lead) {
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="${lead}" target="_blank">${lead}</a>`;
+        this.$leadsList.appendChild(li);
+    }
 
-            this.$leadsItemsOutlet.querySelector('ul').innerHTML = listItems;
-        } else {
-            if (leadsItemsOutletHasChildren) {
-                this.$leadsItemsOutlet.textContent = '';
-            }
-        }
+    renderLeadsList(leads) {
+        this.$leadsList.innerHTML = '';
+
+        leads.forEach(lead => this.addLeadToUI(lead));
     }
 }
 
