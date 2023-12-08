@@ -1,5 +1,5 @@
 # Leads Tracker
 
-A simple JavaScript Leads Tracking Chrome extension.
+A simple JavaScript Lead Tracking Chrome extension.
 
-Visit to see it in action.
+Uses localStorage and Chrome API.

@@ -2,17 +2,19 @@ class LeadTracker {
     constructor() {
         this.leads = JSON.parse(localStorage.getItem('leads')) || [];
 
-        this.$leads = null;
-
         this.initDOMElements();
         this.addEventListeners();
-        this.updateLeadsUI();
+        this.updateLeadsUI(this.leads);
+
+        console.log(chrome.tabs);
     }
 
     initDOMElements() {
         this.$leadInput = this.getElement('#lead-input');
         this.$saveInputBtn = this.getElement('#save-input-btn');
+        this.$saveTabBtn = this.getElement('#save-tab-btn');
         this.$deleteBtn = this.getElement('#delete-btn');
+        this.$leadsItemsOutlet = this.getElement('#leads-items-outlet');
     }
 
     getElement(selector) {
@@ -26,21 +28,20 @@ class LeadTracker {
     }
 
     addEventListeners() {
-        this.$saveInputBtn?.addEventListener('click', () => this.saveLead());
+        this.$saveInputBtn?.addEventListener('click', e => this.saveLead(e, this.$leadInput.value));
+        this.$saveTabBtn?.addEventListener('click', e => this.getCurrentTabUrl(tab => this.saveLead(e, tab)));
         this.$deleteBtn?.addEventListener('click', () => this.deleteAll());
     }
 
-    saveLead() {
-        const inputValue = this.$leadInput.value;
-
-        if (inputValue) {
-            this.leads.push(inputValue);
+    saveLead(e, value) {
+        if (value) {
+            this.leads.push(value);
 
             localStorage.setItem('leads', JSON.stringify(this.leads));
 
-            this.$leadInput.value = '';
+            e.target.id === 'save-input-btn' && (this.$leadInput.value = '');
 
-            this.updateLeadsUI();
+            this.updateLeadsUI(this.leads);
         }
     }
 
@@ -49,21 +50,25 @@ class LeadTracker {
 
         this.leads = [];
 
-        this.updateLeadsUI();
+        this.updateLeadsUI(this.leads);
     }
 
-    updateLeadsUI() {
-        if (this.leads.length >= 1) {
-            if (!this.$leads) {
+    getCurrentTabUrl(callback) {
+        return chrome.tabs && chrome.tabs.query({ active: true, currentWindow: true }, tabs => callback(tabs[0].url));
+    }
+
+    updateLeadsUI(leads) {
+        const leadsItemsOutletHasChildren = this.$leadsItemsOutlet.children.length;
+
+        if (leads.length >= 1) {
+            if (!leadsItemsOutletHasChildren) {
                 const ul = document.createElement('ul');
                 ul.id = 'leads';
 
-                this.$deleteBtn.after(ul);
-
-                this.$leads = document.querySelector('#leads');
+                this.$leadsItemsOutlet.append(ul);
             }
 
-            const listItems = this.leads
+            const listItems = leads
                 .map(
                     lead => `
                         <li>
@@ -73,10 +78,10 @@ class LeadTracker {
                 )
                 .join('');
 
-            this.$leads.innerHTML = listItems;
+            this.$leadsItemsOutlet.querySelector('ul').innerHTML = listItems;
         } else {
-            if (this.$leads) {
-                this.$leads.remove();
+            if (leadsItemsOutletHasChildren) {
+                this.$leadsItemsOutlet.textContent = '';
             }
         }
     }
