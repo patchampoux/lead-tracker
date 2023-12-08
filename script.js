@@ -5,8 +5,6 @@ class LeadTracker {
         this.initDOMElements();
         this.addEventListeners();
         this.updateLeadsUI(this.leads);
-
-        console.log(chrome.tabs);
     }
 
     initDOMElements() {
@@ -28,18 +26,30 @@ class LeadTracker {
     }
 
     addEventListeners() {
-        this.$saveInputBtn?.addEventListener('click', e => this.saveLead(e, this.$leadInput.value));
-        this.$saveTabBtn?.addEventListener('click', e => this.getCurrentTabUrl(tab => this.saveLead(e, tab)));
+        this.$saveInputBtn?.addEventListener('click', () => this.handleSaveInput());
+        this.$saveTabBtn?.addEventListener('click', () => this.handleSaveTab());
         this.$deleteBtn?.addEventListener('click', () => this.deleteAll());
     }
 
-    saveLead(e, value) {
+    handleSaveInput() {
+        const value = this.$leadInput.value;
+
         if (value) {
-            this.leads.push(value);
+            this.saveLead(value);
+
+            this.$leadInput.value;
+        }
+    }
+
+    handleSaveTab() {
+        this.getCurrentTabUrl(url => this.saveLead(url));
+    }
+
+    saveLead(lead) {
+        if (!this.leads.includes(lead)) {
+            this.leads.push(lead);
 
             localStorage.setItem('leads', JSON.stringify(this.leads));
-
-            e.target.id === 'save-input-btn' && (this.$leadInput.value = '');
 
             this.updateLeadsUI(this.leads);
         }
@@ -54,7 +64,7 @@ class LeadTracker {
     }
 
     getCurrentTabUrl(callback) {
-        return chrome.tabs && chrome.tabs.query({ active: true, currentWindow: true }, tabs => callback(tabs[0].url));
+        return chrome.tabs?.query({ active: true, currentWindow: true }, tabs => callback(tabs[0].url));
     }
 
     updateLeadsUI(leads) {
